@@ -6,10 +6,30 @@ const productRouter = Router();
 const collection = db.collection("products");
 
 productRouter.get("/", async (req, res) => {
-  const products = await collection.find({}).limit(10).toArray();
+  try {
+    const name = req.query.keywords;
+    const category = req.query.category;
+    const query = {};
+    if (name) {
+      query.name = new RegExp(name, "i");
+    }
 
-  console.log(products);
-  return res.json({ data: products });
+    if (category) {
+      query.category = new RegExp(category, "i");
+    }
+
+    const products = await collection
+      .find(query)
+      .sort({ created_at: -1 })
+      .limit(10)
+      .toArray();
+
+    return res.json({ data: products });
+  } catch (error) {
+    return res.json({
+      message: `${error}`,
+    });
+  }
 });
 
 productRouter.get("/:id", async (req, res) => {
@@ -19,7 +39,7 @@ productRouter.get("/:id", async (req, res) => {
 });
 
 productRouter.post("/", async (req, res) => {
-  const productData = { ...req.body };
+  const productData = { ...req.body, created_at: new Date() };
   await collection.insertOne(productData);
   return res.json({
     message: "Product has been created successfully",
@@ -28,7 +48,7 @@ productRouter.post("/", async (req, res) => {
 
 productRouter.put("/:id", async (req, res) => {
   const productId = new ObjectId(req.params.id);
-  const newProductData = { ...req.body };
+  const newProductData = { ...req.body, modified_at: new Date() };
 
   await collection.updateOne(
     {

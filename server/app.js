@@ -6,7 +6,7 @@ import { client } from "./utils/db.js";
 async function init() {
   const app = express();
   const port = 4001;
-
+  
   await client.connect();
   
   app.use(cors());
