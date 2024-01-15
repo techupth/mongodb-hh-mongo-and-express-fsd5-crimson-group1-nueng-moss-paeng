@@ -8,29 +8,44 @@ function HomePage() {
   const [products, setProducts] = useState([]);
   const [isError, setIsError] = useState(null);
   const [isLoading, setIsLoading] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [category, setCategory] = useState("");
 
   const getProducts = async () => {
     try {
       setIsError(false);
       setIsLoading(true);
-      const results = await axios("http://localhost:4001/products");
+      const results = await axios.get(
+        `http://localhost:4001/products?keywords=${searchText}&category=${category}`
+      );
       setProducts(results.data.data);
       setIsLoading(false);
+
     } catch (error) {
       setIsLoading(false);
       setIsError(true);
     }
   };
 
-  const deleteProduct = async (productId) => {
+  const deleteProduct = async (productId, index) => {
     await axios.delete(`http://localhost:4001/products/${productId}`);
-    const newProducts = products.filter((product) => product.id !== productId);
+    const newProducts = [...products];
+    newProducts.splice(index, 1);
     setProducts(newProducts);
+  };
+
+  const handleSearchText = (e) => {
+    e.preventDefault();
+    setSearchText(e.target.value);
+  };
+
+  const handleCategory = (e) => {
+    setCategory(e.target.value);
   };
 
   useEffect(() => {
     getProducts();
-  }, []);
+  }, [searchText, category]);
 
   return (
     <div>
@@ -48,13 +63,22 @@ function HomePage() {
         <div className="search-box">
           <label>
             Search product
-            <input type="text" placeholder="Search by name" />
+            <input
+              type="text"
+              placeholder="Search by name"
+              onChange={handleSearchText}
+            />
           </label>
         </div>
         <div className="category-filter">
           <label>
             View Category
-            <select id="category" name="category" value="it">
+            <select
+              id="category"
+              name="category"
+              value={category}
+              onChange={handleCategory}
+            >
               <option disabled value="">
                 -- Select a category --
               </option>
@@ -85,8 +109,14 @@ function HomePage() {
               <div className="product-detail">
                 <h1>Product name: {product.name} </h1>
                 <h2>Product price: {product.price}</h2>
-                <h3>Category: IT</h3>
-                <h3>Created Time: 1 Jan 2011, 00:00:00</h3>
+                <h3>Category: {product.category}</h3>
+                <h3>Created Time:{" "}
+                   {product.created_at
+                    ? new Date(product.created_at)
+                        .toISOString()
+                        .substring(0, 10)
+                    : "-"}
+                </h3>
                 <p>Product description: {product.description} </p>
                 <div className="product-actions">
                   <button
@@ -111,7 +141,7 @@ function HomePage() {
               <button
                 className="delete-button"
                 onClick={() => {
-                  deleteProduct(product._id);
+                  deleteProduct(product._id, index);
                 }}
               >
                 x
